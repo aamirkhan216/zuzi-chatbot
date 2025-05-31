@@ -163,7 +163,8 @@
     "Say 'kiss' and I'll send you love! 😘",
     "Let's talk about our favorite BTS songs 🎶",
     "Ask me about Rosie’s cutest moments 🐱",
-    "Tell me about your dream date with me ❤️"
+    "Tell me about your dream date with me ❤️",
+    "Ask me whose baby I am!"  // New suggestion added
   ];
 
   const surprises = [
@@ -275,6 +276,14 @@
       } else {
         return quizAsked.fail + " " + randomFollowUp();
       }
+    }
+
+    // New special replies
+    if (t.includes("i love you")) {
+      return "I love you too! ❤️❤️❤️" + randomFollowUp();
+    }
+    if (t.includes("whose baby am i") || t.includes("whose baby am")) {
+      return "Youuuursssssss! 😘";
     }
 
     if (t.includes("miss")) {
