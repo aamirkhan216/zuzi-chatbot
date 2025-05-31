@@ -7,87 +7,128 @@
 <style>
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #fce4ec;
+    background: linear-gradient(135deg, #7b3fbf 0%, #b085f5 100%);
     margin: 0; padding: 0;
     display: flex; justify-content: center; align-items: center;
     height: 100vh;
+    color: #f3e8ff;
   }
   #chat-container {
-    background: white;
-    width: 370px;
-    height: 620px;
-    border-radius: 20px;
-    box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4);
+    background: rgba(60, 20, 80, 0.9);
+    width: 400px;
+    height: 670px;
+    border-radius: 25px;
+    box-shadow: 0 6px 20px rgba(183, 123, 246, 0.7);
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    position: relative;
   }
   #chatbox {
     flex: 1;
     padding: 20px;
     overflow-y: auto;
-    font-size: 16px;
-    background: #fff0f6;
+    font-size: 17px;
+    line-height: 1.5;
   }
   .message {
     margin: 10px 0;
-    max-width: 75%;
-    padding: 12px 18px;
-    border-radius: 20px;
-    line-height: 1.4;
+    max-width: 70%;
+    padding: 14px 20px;
+    border-radius: 25px;
+    line-height: 1.5;
+    word-wrap: break-word;
+    white-space: pre-line;
   }
   .bot-message {
-    background: #ffccdd;
+    background: #9c72d6dd;
     align-self: flex-start;
     position: relative;
   }
   .user-message {
-    background: #ff6699;
-    color: white;
+    background: #b08bebdd;
     align-self: flex-end;
+    color: #2e004f;
   }
   #input-area {
     display: flex;
-    border-top: 2px solid #ffb6c1;
-    background: #ffe6f0;
+    border-top: 2px solid #a384d9;
+    background: rgba(107, 61, 172, 0.7);
   }
   #userInput {
     flex: 1;
-    padding: 15px;
+    padding: 16px;
     border: none;
-    font-size: 16px;
-    border-radius: 0 0 0 20px;
+    font-size: 17px;
+    border-radius: 0 0 0 25px;
     outline: none;
+    color: #2e004f;
+    font-weight: 600;
   }
   #sendBtn {
-    background: #ff3399;
+    background: #7b3fbf;
     border: none;
-    color: white;
+    color: #f3e8ff;
     font-weight: bold;
-    padding: 0 25px;
+    padding: 0 26px;
     cursor: pointer;
-    border-radius: 0 0 20px 0;
+    border-radius: 0 0 25px 0;
+    font-size: 17px;
+    transition: background 0.3s ease;
   }
   #sendBtn:hover {
-    background: #e60073;
+    background: #6c369e;
   }
   img.gif {
-    max-width: 150px;
+    max-width: 160px;
     border-radius: 15px;
-    margin-top: 8px;
+    margin-top: 10px;
     display: block;
+  }
+  #music-controls {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: #9c72d6cc;
+    border-radius: 20px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-weight: 600;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #music-controls span {
+    font-size: 18px;
+  }
+  #suggestions {
+    background: #7a4fd9bb;
+    padding: 8px 14px;
+    border-radius: 18px;
+    font-size: 15px;
+    margin: 10px auto 15px;
+    max-width: 360px;
+    text-align: center;
+    user-select: none;
   }
 </style>
 </head>
 <body>
 
 <div id="chat-container">
+  <div id="music-controls" title="Play/Pause BTS Song" aria-label="Music Controls" tabindex="0" role="button">
+    <span id="music-icon">🎵</span> <span id="music-text">Play BTS Song</span>
+  </div>
   <div id="chatbox"></div>
+  <div id="suggestions" aria-live="polite"></div>
   <div id="input-area">
     <input type="text" id="userInput" placeholder="Say something, ladybug..." autocomplete="off" />
-    <button id="sendBtn">Send</button>
+    <button id="sendBtn" aria-label="Send message button">Send</button>
   </div>
 </div>
+
+<audio id="btsAudio" loop preload="auto" src="https://cdn.pixabay.com/download/audio/2021/08/04/audio_3d14683236.mp3?filename=romantic-love-song-11334.mp3"></audio>
 
 <audio id="hugSound" src="https://actions.google.com/sounds/v1/human_voices/hug.ogg" preload="auto"></audio>
 <audio id="loveSound" src="https://actions.google.com/sounds/v1/heart/heartbeat.ogg" preload="auto"></audio>
@@ -96,9 +137,15 @@
   const chatbox = document.getElementById('chatbox');
   const input = document.getElementById('userInput');
   const sendBtn = document.getElementById('sendBtn');
+  const btsAudio = document.getElementById('btsAudio');
   const hugSound = document.getElementById('hugSound');
   const loveSound = document.getElementById('loveSound');
+  const musicControls = document.getElementById('music-controls');
+  const musicIcon = document.getElementById('music-icon');
+  const musicText = document.getElementById('music-text');
+  const suggestions = document.getElementById('suggestions');
 
+  // Memory and conversation state
   const memory = {
     favoriteColor: 'purple',
     favoriteAnimal: 'cat',
@@ -109,44 +156,11 @@
     favoriteFeatures: ['eyes', 'lips', 'nose'],
   };
 
-  // Helper: typing effect for bot message
-  function typeMessage(message, fromUser = false, callback = null) {
-    let i = 0;
-    const className = fromUser ? 'user-message' : 'bot-message';
-    const msgElem = document.createElement('p');
-    msgElem.className = className + ' message';
-    chatbox.appendChild(msgElem);
-    chatbox.scrollTop = chatbox.scrollHeight;
+  let quizActive = false;
+  let quizAsked = null;
+  let userMessageCount = 0;
 
-    function type() {
-      if (i < message.length) {
-        msgElem.textContent += message.charAt(i);
-        i++;
-        setTimeout(type, 35);
-        chatbox.scrollTop = chatbox.scrollHeight;
-      } else if (callback) {
-        callback();
-      }
-    }
-    type();
-  }
-
-  // Insert gif in chat
-  function addGif(src) {
-    const img = document.createElement('img');
-    img.src = src;
-    img.className = 'gif';
-    chatbox.appendChild(img);
-    chatbox.scrollTop = chatbox.scrollHeight;
-  }
-
-  // Play audio helper
-  function playSound(sound) {
-    sound.currentTime = 0;
-    sound.play();
-  }
-
-  // Quiz questions
+  // List of quiz questions
   const quizzes = [
     {
       question: "What’s my favorite hair color on you, butterfly? 😉",
@@ -171,17 +185,15 @@
     }
   ];
 
-  // Send quiz question
-  function sendQuiz() {
-    const quiz = quizzes[Math.floor(Math.random() * quizzes.length)];
-    typeMessage(quiz.question, false, () => {
-      quizAsked = quiz;
-      quizActive = true;
-    });
-  }
-
-  let quizActive = false;
-  let quizAsked = null;
+  // Suggestions for her to ask
+  const askSuggestions = [
+    "Try asking me how my day was! 😊",
+    "You can say 'hug' for a virtual squeeze 🤗",
+    "Ask me for a joke to lighten the mood! 😄",
+    "Want a quiz? Just type 'quiz' or 'game' 🎲",
+    "Tell me how you’re feeling today, ladybug! 💜",
+    "Say 'kiss' and I'll send some love! 😘"
+  ];
 
   // Random sweet surprises
   const surprises = [
@@ -199,8 +211,72 @@
     },
   ];
 
-  // Randomly show surprises after every 4 messages approx
-  let userMessageCount = 0;
+  // Helper: typing effect for bot message
+  function typeMessage(message, fromUser = false, callback = null) {
+    let i = 0;
+    const className = fromUser ? 'user-message' : 'bot-message';
+    const msgElem = document.createElement('p');
+    msgElem.className = className + ' message';
+    chatbox.appendChild(msgElem);
+    chatbox.scrollTop = chatbox.scrollHeight;
+
+    function type() {
+      if (i < message.length) {
+        msgElem.textContent += message.charAt(i);
+        i++;
+        setTimeout(type, 25);
+        chatbox.scrollTop = chatbox.scrollHeight;
+      } else if (callback) {
+        callback();
+      }
+    }
+    type();
+  }
+
+  // Insert gif in chat
+  function addGif(src) {
+    const img = document.createElement('img');
+    img.src = src;
+    img.className = 'gif';
+    chatbox.appendChild(img);
+    chatbox.scrollTop = chatbox.scrollHeight;
+  }
+
+  // Play audio helper
+  function playSound(sound) {
+    sound.currentTime = 0;
+    sound.play();
+  }
+
+  // Pick random from array helper
+  function randomFrom(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+
+  // Bot asks her questions to keep chat flowing
+  function botAskQuestion() {
+    const questions = [
+      "How was your day, my love? 💜",
+      "What’s something fun you did recently, ladybug? 🐞",
+      "How are you feeling right now? 😊",
+      "Do you remember our first meeting? It still makes me smile. 🦋",
+      "Have you listened to BTS lately? What's your favorite song? 🎶",
+      "What’s your favorite thing Rosie did today? 🐱",
+      "If you could pick any place for our next date, where would it be? ❤️",
+      "What’s one thing you love about yourself today? 🌟"
+    ];
+    const q = randomFrom(questions);
+    typeMessage(q);
+  }
+
+  // Send quiz question
+  function sendQuiz() {
+    const quiz = quizzes[Math.floor(Math.random() * quizzes.length)];
+    typeMessage(quiz.question, false, () => {
+      quizAsked = quiz;
+      quizActive = true;
+    });
+  }
 
   // Bot response logic
   function getBotResponse(text) {
@@ -215,14 +291,53 @@
       }
     }
 
+    // Sweet, flirty, romantic replies to general questions & keywords
     if(t.includes("miss")) {
-      return "I miss you more than all the stars, my love. 🌟💖";
+      return randomFrom([
+        "I miss you more than all the stars, my love. 🌟💖",
+        "Counting the moments until I see you again, babe. 💜",
+        "Every second without you feels like forever, ladybug. 🐞"
+      ]);
     }
     if(t.includes("love")) {
-      return "I love you to the moon and back, babe! 🌙❤️";
+      return randomFrom([
+        "I love you to the moon and back, babe! 🌙❤️",
+        "My heart beats only for you, Zuzi. 💓",
+        "You’re my forever and always, butterfly. 🦋"
+      ]);
     }
     if(t.includes("hello") || t.includes("hi")) {
-      return "Hey babe! How’s my gorgeous ladybug today? 🐞";
+      return randomFrom([
+        "Hey Zuzi, my ladybug! How are you feeling today? 🐞",
+        "Hello my love! Can’t wait to chat with you. 💜",
+        "Hi babe! You brighten my day every time. ☀️"
+      ]);
+    }
+    if(t.includes("how are you")) {
+      return randomFrom([
+        "I’ll be better when I see you, my love. 💜",
+        "Thinking of you always makes me smile. 😊",
+        "Missing you is hard, but loving you is easy. ❤️"
+      ]);
+    }
+    if(t.includes("how was your day")) {
+      return randomFrom([
+        "My day was better just thinking about you, ladybug. 🐞",
+        "Can’t wait to hear about your day, babe! Tell me everything. 💜",
+        "My favorite part of the day is chatting with you! 😊"
+      ]);
+    }
+    if(t.includes("how are you feeling")) {
+      return randomFrom([
+        "Feeling a bit lonely without you, but your love keeps me strong. 💪❤️",
+        "Missing your hugs, but your love warms my heart. 🤗",
+        "I’m good as long as you’re happy, butterfly. 🦋"
+      ]);
+    }
+    if(t.includes("kiss")) {
+      const kisses = ["😘","😚","😗","💋","😍"];
+      const kissEmoji = randomFrom(kisses);
+      return `Sending you a sweet kiss ${kissEmoji}, my love!`;
     }
     if(t.includes("hug")) {
       playSound(hugSound);
@@ -261,15 +376,34 @@
       return "6'9\" and still taller in my heart! You’re my giant love. 💖";
     }
 
-    // Random fallback replies with nickname
-    const randomReplies = [
+    // If she says thanks or thank you
+    if(t.includes("thank")) {
+      return "Anything for you, my love! 😘";
+    }
+
+    // If she says bye or see you
+    if(t.includes("bye") || t.includes("see you")) {
+      return "I can't wait to see you again soon! 💖 Bye for now!";
+    }
+
+    // If none matches, fallback with question and suggestion
+    const fallbackReplies = [
       "You make my heart flutter, butterfly! 🦋",
       "I’m thinking of you, my lovely ladybug 🐞",
       "You + Me = Forever, Zuzi ❤️",
       "Every moment away from you feels like forever, babe.",
       "Tell me more, my love! I’m all ears. 👂"
     ];
-    return randomReplies[Math.floor(Math.random() * randomReplies.length)];
+    // Also add a question from bot to keep chat going
+    setTimeout(botAskQuestion, 2200);
+    updateSuggestions();
+    return randomFrom(fallbackReplies);
+  }
+
+  // Update suggestion box with random prompt
+  function updateSuggestions() {
+    const s = randomFrom(askSuggestions);
+    suggestions.textContent = "💡 You could ask: " + s;
   }
 
   function addMessage(text, fromUser = false) {
@@ -294,7 +428,7 @@
       // After every 4 messages from user, send a random surprise
       if(userMessageCount % 4 === 0) {
         setTimeout(() => {
-          const surprise = surprises[Math.floor(Math.random() * surprises.length)];
+          const surprise = randomFrom(surprises);
           surprise();
         }, 1800);
       }
@@ -308,9 +442,28 @@
     }
   });
 
-  // Greet on page load
+  // Music play/pause toggle
+  musicControls.addEventListener('click', () => {
+    if(btsAudio.paused) {
+      btsAudio.play();
+      musicIcon.textContent = "🔊";
+      musicText.textContent = "Pause BTS Song";
+    } else {
+      btsAudio.pause();
+      musicIcon.textContent = "🎵";
+      musicText.textContent = "Play BTS Song";
+    }
+  });
+  musicControls.addEventListener('keypress', (e) => {
+    if(e.key === "Enter" || e.key === " ") {
+      musicControls.click();
+    }
+  });
+
+  // Initial greeting on page load
   window.onload = () => {
-    typeMessage("Hey Zuzi, your butterfly here! 🦋 I'm so happy to chat with you. Say hi or ask me anything!");
+    typeMessage("Hey Zuzi, my ladybug! 🐞 I'm so happy to chat with you. Say hi or ask me anything!");
+    updateSuggestions();
   };
 </script>
 
