@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Chatbot for Zuzi ❤️</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #fce4ec;
+    margin: 0; padding: 0;
+    display: flex; justify-content: center; align-items: center;
+    height: 100vh;
+  }
+  #chat-container {
+    background: white;
+    width: 370px;
+    height: 620px;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(255, 105, 180, 0.4);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #chatbox {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    font-size: 16px;
+    background: #fff0f6;
+  }
+  .message {
+    margin: 10px 0;
+    max-width: 75%;
+    padding: 12px 18px;
+    border-radius: 20px;
+    line-height: 1.4;
+  }
+  .bot-message {
+    background: #ffccdd;
+    align-self: flex-start;
+    position: relative;
+  }
+  .user-message {
+    background: #ff6699;
+    color: white;
+    align-self: flex-end;
+  }
+  #input-area {
+    display: flex;
+    border-top: 2px solid #ffb6c1;
+    background: #ffe6f0;
+  }
+  #userInput {
+    flex: 1;
+    padding: 15px;
+    border: none;
+    font-size: 16px;
+    border-radius: 0 0 0 20px;
+    outline: none;
+  }
+  #sendBtn {
+    background: #ff3399;
+    border: none;
+    color: white;
+    font-weight: bold;
+    padding: 0 25px;
+    cursor: pointer;
+    border-radius: 0 0 20px 0;
+  }
+  #sendBtn:hover {
+    background: #e60073;
+  }
+  img.gif {
+    max-width: 150px;
+    border-radius: 15px;
+    margin-top: 8px;
+    display: block;
+  }
+</style>
+</head>
+<body>
+
+<div id="chat-container">
+  <div id="chatbox"></div>
+  <div id="input-area">
+    <input type="text" id="userInput" placeholder="Say something, ladybug..." autocomplete="off" />
+    <button id="sendBtn">Send</button>
+  </div>
+</div>
+
+<audio id="hugSound" src="https://actions.google.com/sounds/v1/human_voices/hug.ogg" preload="auto"></audio>
+<audio id="loveSound" src="https://actions.google.com/sounds/v1/heart/heartbeat.ogg" preload="auto"></audio>
+
+<script>
+  const chatbox = document.getElementById('chatbox');
+  const input = document.getElementById('userInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const hugSound = document.getElementById('hugSound');
+  const loveSound = document.getElementById('loveSound');
+
+  const memory = {
+    favoriteColor: 'purple',
+    favoriteAnimal: 'cat',
+    catName: 'Rosie',
+    band: 'BTS',
+    height: "6'9\"",
+    favoriteHairColor: 'red',
+    favoriteFeatures: ['eyes', 'lips', 'nose'],
+  };
+
+  // Helper: typing effect for bot message
+  function typeMessage(message, fromUser = false, callback = null) {
+    let i = 0;
+    const className = fromUser ? 'user-message' : 'bot-message';
+    const msgElem = document.createElement('p');
+    msgElem.className = className + ' message';
+    chatbox.appendChild(msgElem);
+    chatbox.scrollTop = chatbox.scrollHeight;
+
+    function type() {
+      if (i < message.length) {
+        msgElem.textContent += message.charAt(i);
+        i++;
+        setTimeout(type, 35);
+        chatbox.scrollTop = chatbox.scrollHeight;
+      } else if (callback) {
+        callback();
+      }
+    }
+    type();
+  }
+
+  // Insert gif in chat
+  function addGif(src) {
+    const img = document.createElement('img');
+    img.src = src;
+    img.className = 'gif';
+    chatbox.appendChild(img);
+    chatbox.scrollTop = chatbox.scrollHeight;
+  }
+
+  // Play audio helper
+  function playSound(sound) {
+    sound.currentTime = 0;
+    sound.play();
+  }
+
+  // Quiz questions
+  const quizzes = [
+    {
+      question: "What’s my favorite hair color on you, butterfly? 😉",
+      options: ["Black", "Red", "Blonde", "Purple"],
+      answer: "Red",
+      success: "Correct! Red suits you like no other! 🔥",
+      fail: "Almost! It’s actually your gorgeous red hair, babe! ❤️"
+    },
+    {
+      question: "What’s Rosie’s favorite thing to do? 🐱",
+      options: ["Sleep", "Play", "Eat", "Purr"],
+      answer: "Purr",
+      success: "You got it! Rosie’s purring is the sweetest sound. 🐾",
+      fail: "Not quite! Rosie loves to purr the most. 😻"
+    },
+    {
+      question: "Which BTS member would I want to dance with you to? 🎤",
+      options: ["RM", "Jungkook", "Jimin", "V"],
+      answer: "Jungkook",
+      success: "Jungkook’s moves are amazing, just like our dance memories! 💃",
+      fail: "Close! But I think Jungkook’s the one for our dance-off. 😉"
+    }
+  ];
+
+  // Send quiz question
+  function sendQuiz() {
+    const quiz = quizzes[Math.floor(Math.random() * quizzes.length)];
+    typeMessage(quiz.question, false, () => {
+      quizAsked = quiz;
+      quizActive = true;
+    });
+  }
+
+  let quizActive = false;
+  let quizAsked = null;
+
+  // Random sweet surprises
+  const surprises = [
+    () => {
+      typeMessage("Just a little reminder: I love you soooo much, ladybug! 💕");
+      playSound(loveSound);
+    },
+    () => {
+      typeMessage("Here’s a virtual hug, babe! 🤗", false, () => addGif("https://media.giphy.com/media/l2QDM9Jnim1YVILXa/giphy.gif"));
+      playSound(hugSound);
+    },
+    () => {
+      typeMessage("You’re my forever butterfly. 🦋 Can't wait to hold you again.");
+      playSound(loveSound);
+    },
+  ];
+
+  // Randomly show surprises after every 4 messages approx
+  let userMessageCount = 0;
+
+  // Bot response logic
+  function getBotResponse(text) {
+    const t = text.toLowerCase();
+
+    if(quizActive) {
+      quizActive = false;
+      if(t === quizAsked.answer.toLowerCase()) {
+        return quizAsked.success;
+      } else {
+        return quizAsked.fail;
+      }
+    }
+
+    if(t.includes("miss")) {
+      return "I miss you more than all the stars, my love. 🌟💖";
+    }
+    if(t.includes("love")) {
+      return "I love you to the moon and back, babe! 🌙❤️";
+    }
+    if(t.includes("hello") || t.includes("hi")) {
+      return "Hey babe! How’s my gorgeous ladybug today? 🐞";
+    }
+    if(t.includes("hug")) {
+      playSound(hugSound);
+      addGif("https://media.giphy.com/media/l2QDM9Jnim1YVILXa/giphy.gif");
+      return "Sending you the biggest, warmest virtual hug right now! 🤗";
+    }
+    if(t.includes("joke")) {
+      return "Why did the butterfly break up with the caterpillar? Because it found a better *flutter* friend! 🦋😄";
+    }
+    if(t.includes("favorite memory")) {
+      return "Remember the first time we met? I was totally flattered by your smile. I fell for you before I even knew how it’d all turn out. 💕";
+    }
+    if(t.includes("quiz") || t.includes("game")) {
+      sendQuiz();
+      return "Ready for a quick quiz? Answer carefully, ladybug! 😉";
+    }
+    if(t.includes("cat")) {
+      return `I know how much you love Rosie — the cutest cat ever! 🐱`;
+    }
+    if(t.includes("bts")) {
+      return "BTS vibes all day! Which song should we dance to next? 🎶";
+    }
+    if(t.includes("purple")) {
+      return "Purple suits you perfectly, just like your beautiful soul. 💜";
+    }
+    if(t.includes("eyes")) {
+      return "Your eyes are like sparkling stars — I get lost in them every time. ✨";
+    }
+    if(t.includes("lips")) {
+      return "Your lips are made for my sweetest kisses, babe. 😘";
+    }
+    if(t.includes("nose")) {
+      return "I love that cute little nose of yours, Zuzi. 🥰";
+    }
+    if(t.includes("height")) {
+      return "6'9\" and still taller in my heart! You’re my giant love. 💖";
+    }
+
+    // Random fallback replies with nickname
+    const randomReplies = [
+      "You make my heart flutter, butterfly! 🦋",
+      "I’m thinking of you, my lovely ladybug 🐞",
+      "You + Me = Forever, Zuzi ❤️",
+      "Every moment away from you feels like forever, babe.",
+      "Tell me more, my love! I’m all ears. 👂"
+    ];
+    return randomReplies[Math.floor(Math.random() * randomReplies.length)];
+  }
+
+  function addMessage(text, fromUser = false) {
+    const className = fromUser ? 'user-message' : 'bot-message';
+    const messageElem = document.createElement('p');
+    messageElem.className = className + ' message';
+    messageElem.textContent = text;
+    chatbox.appendChild(messageElem);
+    chatbox.scrollTop = chatbox.scrollHeight;
+  }
+
+  function handleUserInput() {
+    const userText = input.value.trim();
+    if(!userText) return;
+    addMessage(userText, true);
+    input.value = "";
+    userMessageCount++;
+
+    setTimeout(() => {
+      const reply = getBotResponse(userText);
+      typeMessage(reply);
+      // After every 4 messages from user, send a random surprise
+      if(userMessageCount % 4 === 0) {
+        setTimeout(() => {
+          const surprise = surprises[Math.floor(Math.random() * surprises.length)];
+          surprise();
+        }, 1800);
+      }
+    }, 700);
+  }
+
+  sendBtn.addEventListener('click', handleUserInput);
+  input.addEventListener('keypress', (e) => {
+    if(e.key === 'Enter') {
+      handleUserInput();
+    }
+  });
+
+  // Greet on page load
+  window.onload = () => {
+    typeMessage("Hey Zuzi, your butterfly here! 🦋 I'm so happy to chat with you. Say hi or ask me anything!");
+  };
+</script>
+
+</body>
+</html>
