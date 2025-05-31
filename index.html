@@ -85,23 +85,6 @@
     margin-top: 10px;
     display: block;
   }
-  #music-controls {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    background: #9c72d6cc;
-    border-radius: 20px;
-    padding: 6px 12px;
-    cursor: pointer;
-    font-weight: 600;
-    user-select: none;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  #music-controls span {
-    font-size: 18px;
-  }
   #suggestions {
     background: #7a4fd9bb;
     padding: 8px 14px;
@@ -117,9 +100,6 @@
 <body>
 
 <div id="chat-container" role="main" aria-label="Chatbot conversation container">
-  <div id="music-controls" title="Play/Pause BTS Song" aria-label="Music Controls" tabindex="0" role="button">
-    <span id="music-icon">🎵</span> <span id="music-text">Play BTS Song</span>
-  </div>
   <div id="chatbox" aria-live="polite" aria-relevant="additions"></div>
   <div id="suggestions" aria-live="polite"></div>
   <div id="input-area">
@@ -128,24 +108,10 @@
   </div>
 </div>
 
-<!-- Fixed working audio source for BTS/romantic song -->
-<audio id="btsAudio" loop preload="auto" src="https://www.bensound.com/bensound-music/bensound-love.mp3"></audio>
-
-<audio id="hugSound" src="https://actions.google.com/sounds/v1/human_voices/hug.ogg" preload="auto"></audio>
-<audio id="loveSound" src="https://actions.google.com/sounds/v1/heart/heartbeat.ogg" preload="auto"></audio>
-<audio id="laughSound" src="https://actions.google.com/sounds/v1/human_voices/laughing.ogg" preload="auto"></audio>
-
 <script>
   const chatbox = document.getElementById('chatbox');
   const input = document.getElementById('userInput');
   const sendBtn = document.getElementById('sendBtn');
-  const btsAudio = document.getElementById('btsAudio');
-  const hugSound = document.getElementById('hugSound');
-  const loveSound = document.getElementById('loveSound');
-  const laughSound = document.getElementById('laughSound');
-  const musicControls = document.getElementById('music-controls');
-  const musicIcon = document.getElementById('music-icon');
-  const musicText = document.getElementById('music-text');
   const suggestions = document.getElementById('suggestions');
 
   let quizActive = false;
@@ -203,19 +169,15 @@
   const surprises = [
     () => {
       typeMessage("Just a little reminder: I love you soooo much, ladybug! 💕");
-      playSound(loveSound);
     },
     () => {
       typeMessage("Here’s a virtual hug, babe! 🤗", false, () => addGif(randomFrom(hugGifs)));
-      playSound(hugSound);
     },
     () => {
       typeMessage("You’re my forever butterfly. 🦋 Can't wait to hold you again.");
-      playSound(loveSound);
     },
     () => {
       typeMessage("Here's a silly joke for you: Why don’t scientists trust atoms? Because they make up everything! 😄");
-      playSound(laughSound);
     },
     () => {
       typeMessage("Did you know? Butterflies taste with their feet! Just like I’m savoring every moment with you. 🦋");
@@ -251,15 +213,6 @@
     chatbox.scrollTop = chatbox.scrollHeight;
   }
 
-  function playSound(sound) {
-    try {
-      sound.currentTime = 0;
-      sound.play();
-    } catch(e) {
-      console.warn("Audio play failed. Please check your browser settings or sound permissions.");
-    }
-  }
-
   function randomFrom(arr) {
     return arr[Math.floor(Math.random() * arr.length)];
   }
@@ -289,14 +242,12 @@
   }
 
   function sendHug() {
-    playSound(hugSound);
     addGif(randomFrom(hugGifs));
     return "Sending you the biggest, warmest virtual hug right now! 🤗";
   }
 
   function sendKiss() {
     const kissEmoji = "💋";
-    playSound(loveSound);
     addGif(randomFrom(kissGifs));
     addGif(randomFrom(kissGifs));
     return `Sending you a sweet kiss ${kissEmoji}, my love!`;
@@ -375,7 +326,6 @@
       return sendHug();
     }
     if (t.includes("joke")) {
-      playSound(laughSound);
       return "Why did the butterfly break up with the caterpillar? Because it found a better *flutter* friend! 🦋😄" + randomFollowUp();
     }
     if (t.includes("favorite memory")) {
@@ -413,7 +363,6 @@
       return "I can't wait to see you again soon! 💖 Bye for now!";
     }
 
-    // Fallback replies & prompt new question
     const fallbackReplies = [
       "You make my heart flutter, butterfly! 🦋",
       "I’m thinking of you, my lovely ladybug 🐞",
@@ -463,24 +412,6 @@
   input.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
       handleUserInput();
-    }
-  });
-
-  musicControls.addEventListener('click', () => {
-    if (btsAudio.paused) {
-      btsAudio.play();
-      musicIcon.textContent = "🔊";
-      musicText.textContent = "Pause BTS Song";
-    } else {
-      btsAudio.pause();
-      musicIcon.textContent = "🎵";
-      musicText.textContent = "Play BTS Song";
-    }
-  });
-
-  musicControls.addEventListener('keypress', (e) => {
-    if (e.key === "Enter" || e.key === " ") {
-      musicControls.click();
     }
   });
 
