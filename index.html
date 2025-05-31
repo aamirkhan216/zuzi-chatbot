@@ -434,4 +434,61 @@
   function addMessage(text, fromUser = false) {
     const className = fromUser ? 'user-message' : 'bot-message';
     const messageElem = document.createElement('p');
-    messageElem.className = className
+    messageElem.className = className + ' message';
+    messageElem.textContent = text;
+    chatbox.appendChild(messageElem);
+    chatbox.scrollTop = chatbox.scrollHeight;
+  }
+
+  function handleUserInput() {
+    const userText = input.value.trim();
+    if (!userText) return;
+    addMessage(userText, true);
+    input.value = "";
+    userMessageCount++;
+
+    setTimeout(() => {
+      const reply = getBotResponse(userText);
+      typeMessage(reply);
+      if (userMessageCount % 4 === 0) {
+        setTimeout(() => {
+          const surprise = randomFrom(surprises);
+          surprise();
+        }, 1800);
+      }
+    }, 700);
+  }
+
+  sendBtn.addEventListener('click', handleUserInput);
+  input.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      handleUserInput();
+    }
+  });
+
+  musicControls.addEventListener('click', () => {
+    if (btsAudio.paused) {
+      btsAudio.play();
+      musicIcon.textContent = "🔊";
+      musicText.textContent = "Pause BTS Song";
+    } else {
+      btsAudio.pause();
+      musicIcon.textContent = "🎵";
+      musicText.textContent = "Play BTS Song";
+    }
+  });
+
+  musicControls.addEventListener('keypress', (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      musicControls.click();
+    }
+  });
+
+  window.onload = () => {
+    typeMessage("Hey Zuzi, my ladybug! 🐞 I'm so happy to chat with you. Say hi or ask me anything!");
+    updateSuggestions();
+  };
+</script>
+
+</body>
+</html>
