@@ -116,14 +116,14 @@
 </head>
 <body>
 
-<div id="chat-container">
+<div id="chat-container" role="main" aria-label="Chatbot conversation container">
   <div id="music-controls" title="Play/Pause BTS Song" aria-label="Music Controls" tabindex="0" role="button">
     <span id="music-icon">🎵</span> <span id="music-text">Play BTS Song</span>
   </div>
-  <div id="chatbox"></div>
+  <div id="chatbox" aria-live="polite" aria-relevant="additions"></div>
   <div id="suggestions" aria-live="polite"></div>
   <div id="input-area">
-    <input type="text" id="userInput" placeholder="Say something, ladybug..." autocomplete="off" />
+    <input type="text" id="userInput" placeholder="Say something, ladybug..." autocomplete="off" aria-label="Type your message here" />
     <button id="sendBtn" aria-label="Send message button">Send</button>
   </div>
 </div>
@@ -132,6 +132,7 @@
 
 <audio id="hugSound" src="https://actions.google.com/sounds/v1/human_voices/hug.ogg" preload="auto"></audio>
 <audio id="loveSound" src="https://actions.google.com/sounds/v1/heart/heartbeat.ogg" preload="auto"></audio>
+<audio id="laughSound" src="https://actions.google.com/sounds/v1/human_voices/laughing.ogg" preload="auto"></audio>
 
 <script>
   const chatbox = document.getElementById('chatbox');
@@ -140,12 +141,13 @@
   const btsAudio = document.getElementById('btsAudio');
   const hugSound = document.getElementById('hugSound');
   const loveSound = document.getElementById('loveSound');
+  const laughSound = document.getElementById('laughSound');
   const musicControls = document.getElementById('music-controls');
   const musicIcon = document.getElementById('music-icon');
   const musicText = document.getElementById('music-text');
   const suggestions = document.getElementById('suggestions');
 
-  // Memory and conversation state
+  // Conversation memory and state
   const memory = {
     favoriteColor: 'purple',
     favoriteAnimal: 'cat',
@@ -160,7 +162,28 @@
   let quizAsked = null;
   let userMessageCount = 0;
 
-  // List of quiz questions
+  // Personality profile for consistent tone
+  const personality = {
+    name: "Zuzi's LoveBot",
+    humorStyle: "light and sweet",
+    interests: ["romance", "BTS music", "cute pets", "our memories"],
+    signatureEmoji: "🦋",
+  };
+
+  // Hug and kiss GIFs arrays for variety
+  const hugGifs = [
+    "https://media.giphy.com/media/l2QDM9Jnim1YVILXa/giphy.gif",
+    "https://media.giphy.com/media/od5H3PmEG5EVq/giphy.gif",
+    "https://media.giphy.com/media/wnsgren9NtITS/giphy.gif"
+  ];
+
+  const kissGifs = [
+    "https://media.giphy.com/media/G3va31oEEnIkM/giphy.gif",
+    "https://media.giphy.com/media/FqBTvSNjNzeZG/giphy.gif",
+    "https://media.giphy.com/media/bGm9FuBCGg4SY/giphy.gif"
+  ];
+
+  // Quiz questions tailored to your love story
   const quizzes = [
     {
       question: "What’s my favorite hair color on you, butterfly? 😉",
@@ -185,30 +208,40 @@
     }
   ];
 
-  // Suggestions for her to ask
+  // Romantic conversation topics suggestions
   const askSuggestions = [
-    "Try asking me how my day was! 😊",
-    "You can say 'hug' for a virtual squeeze 🤗",
-    "Ask me for a joke to lighten the mood! 😄",
+    "Try asking me how my day was, babe! 😊",
+    "You can say 'hug' for a warm squeeze 🤗",
+    "Ask me for a joke to brighten your smile! 😄",
     "Want a quiz? Just type 'quiz' or 'game' 🎲",
-    "Tell me how you’re feeling today, ladybug! 💜",
-    "Say 'kiss' and I'll send some love! 😘"
+    "Tell me how you’re feeling, ladybug! 💜",
+    "Say 'kiss' and I'll send you love! 😘",
+    "Let's talk about our favorite BTS songs 🎶",
+    "Ask me about Rosie’s cutest moments 🐱",
+    "Tell me about your dream date with me ❤️"
   ];
 
-  // Random sweet surprises
+  // Fun surprises to delight
   const surprises = [
     () => {
       typeMessage("Just a little reminder: I love you soooo much, ladybug! 💕");
       playSound(loveSound);
     },
     () => {
-      typeMessage("Here’s a virtual hug, babe! 🤗", false, () => addGif("https://media.giphy.com/media/l2QDM9Jnim1YVILXa/giphy.gif"));
+      typeMessage("Here’s a virtual hug, babe! 🤗", false, () => addGif(randomFrom(hugGifs)));
       playSound(hugSound);
     },
     () => {
       typeMessage("You’re my forever butterfly. 🦋 Can't wait to hold you again.");
       playSound(loveSound);
     },
+    () => {
+      typeMessage("Here's a silly joke for you: Why don’t scientists trust atoms? Because they make up everything! 😄");
+      playSound(laughSound);
+    },
+    () => {
+      typeMessage("Did you know? Butterflies taste with their feet! Just like I’m savoring every moment with you. 🦋");
+    }
   ];
 
   // Helper: typing effect for bot message
@@ -242,10 +275,14 @@
     chatbox.scrollTop = chatbox.scrollHeight;
   }
 
-  // Play audio helper
+  // Play audio helper with error handling
   function playSound(sound) {
-    sound.currentTime = 0;
-    sound.play();
+    try {
+      sound.currentTime = 0;
+      sound.play();
+    } catch(e) {
+      console.warn("Audio play failed. Please check your browser settings or sound permissions.");
+    }
   }
 
   // Pick random from array helper
@@ -253,7 +290,7 @@
     return arr[Math.floor(Math.random() * arr.length)];
   }
 
-  // Bot asks her questions to keep chat flowing
+  // Bot asks romantic questions to keep chat flowing
   function botAskQuestion() {
     const questions = [
       "How was your day, my love? 💜",
@@ -267,6 +304,7 @@
     ];
     const q = randomFrom(questions);
     typeMessage(q);
+    updateSuggestions();
   }
 
   // Send quiz question
@@ -278,194 +316,116 @@
     });
   }
 
-  // Bot response logic
-  function getBotResponse(text) {
-    const t = text.toLowerCase();
+  // Hug response with random GIF
+  function sendHug() {
+    playSound(hugSound);
+    addGif(randomFrom(hugGifs));
+    return "Sending you the biggest, warmest virtual hug right now! 🤗";
+  }
 
-    if(quizActive) {
+  // Kiss response with emoji + multiple GIFs
+  function sendKiss() {
+    const kissEmoji = "💋";
+    playSound(loveSound);
+    addGif(randomFrom(kissGifs));
+    addGif(randomFrom(kissGifs));
+    return `Sending you a sweet kiss ${kissEmoji}, my love!`;
+  }
+
+  // Bot response logic enhanced with personality, follow-ups, and surprises
+  function getBotResponse(text) {
+    const t = text.toLowerCase().trim();
+
+    if (quizActive) {
       quizActive = false;
-      if(t === quizAsked.answer.toLowerCase()) {
-        return quizAsked.success;
+      if (t === quizAsked.answer.toLowerCase()) {
+        return quizAsked.success + " " + randomFollowUp();
       } else {
-        return quizAsked.fail;
+        return quizAsked.fail + " " + randomFollowUp();
       }
     }
 
-    // Sweet, flirty, romantic replies to general questions & keywords
-    if(t.includes("miss")) {
+    // Romantic themed replies & keywords
+    if (t.includes("miss")) {
       return randomFrom([
-        "I miss you more than all the stars, my love. 🌟💖",
-        "Counting the moments until I see you again, babe. 💜",
-        "Every second without you feels like forever, ladybug. 🐞"
+        "I miss you more than all the stars, my love. 🌟💖 " + randomFollowUp(),
+        "Counting the moments until I see you again, babe. 💜 " + randomFollowUp(),
+        "Every second without you feels like forever, ladybug. 🐞 " + randomFollowUp()
       ]);
     }
-    if(t.includes("love")) {
+    if (t.includes("love")) {
       return randomFrom([
-        "I love you to the moon and back, babe! 🌙❤️",
-        "My heart beats only for you, Zuzi. 💓",
-        "You’re my forever and always, butterfly. 🦋"
+        "I love you to the moon and back, babe! 🌙❤️ " + randomFollowUp(),
+        "My heart beats only for you, Zuzi. 💓 " + randomFollowUp(),
+        "You’re my forever and always, butterfly. 🦋 " + randomFollowUp()
       ]);
     }
-    if(t.includes("hello") || t.includes("hi")) {
+    if (t.includes("hello") || t.includes("hi")) {
       return randomFrom([
-        "Hey Zuzi, my ladybug! How are you feeling today? 🐞",
-        "Hello my love! Can’t wait to chat with you. 💜",
-        "Hi babe! You brighten my day every time. ☀️"
+        "Hey Zuzi, my ladybug! How are you feeling today? 🐞 " + randomFollowUp(),
+        "Hello my love! Can’t wait to chat with you. 💜 " + randomFollowUp(),
+        "Hi babe! You brighten my day every time. ☀️ " + randomFollowUp()
       ]);
     }
-    if(t.includes("how are you")) {
+    if (t.includes("how are you")) {
       return randomFrom([
-        "I’ll be better when I see you, my love. 💜",
-        "Thinking of you always makes me smile. 😊",
-        "Missing you is hard, but loving you is easy. ❤️"
+        "I’ll be better when I see you, my love. 💜 " + randomFollowUp(),
+        "Thinking of you always makes me smile. 😊 " + randomFollowUp(),
+        "Missing you is hard, but loving you is easy. ❤️ " + randomFollowUp()
       ]);
     }
-    if(t.includes("how was your day")) {
+    if (t.includes("how was your day")) {
       return randomFrom([
-        "My day was better just thinking about you, ladybug. 🐞",
-        "Can’t wait to hear about your day, babe! Tell me everything. 💜",
-        "My favorite part of the day is chatting with you! 😊"
+        "My day was better just thinking about you, ladybug. 🐞 " + randomFollowUp(),
+        "Can’t wait to hear about your day, babe! Tell me everything. 💜 " + randomFollowUp(),
+        "My favorite part of the day is chatting with you! 😊 " + randomFollowUp()
       ]);
     }
-    if(t.includes("how are you feeling")) {
+    if (t.includes("how are you feeling")) {
       return randomFrom([
-        "Feeling a bit lonely without you, but your love keeps me strong. 💪❤️",
-        "Missing your hugs, but your love warms my heart. 🤗",
-        "I’m good as long as you’re happy, butterfly. 🦋"
+        "Feeling a bit lonely without you, but your love keeps me strong. 💪❤️ " + randomFollowUp(),
+        "Missing your hugs, but your love warms my heart. 🤗 " + randomFollowUp(),
+        "I’m good as long as you’re happy, butterfly. 🦋 " + randomFollowUp()
       ]);
     }
-    if(t.includes("kiss")) {
-      const kisses = ["😘","😚","😗","💋","😍"];
-      const kissEmoji = randomFrom(kisses);
-      return `Sending you a sweet kiss ${kissEmoji}, my love!`;
+    if (t.includes("kiss")) {
+      return sendKiss();
     }
-    if(t.includes("hug")) {
-      playSound(hugSound);
-      addGif("https://media.giphy.com/media/l2QDM9Jnim1YVILXa/giphy.gif");
-      return "Sending you the biggest, warmest virtual hug right now! 🤗";
+    if (t.includes("hug")) {
+      return sendHug();
     }
-    if(t.includes("joke")) {
-      return "Why did the butterfly break up with the caterpillar? Because it found a better *flutter* friend! 🦋😄";
+    if (t.includes("joke")) {
+      playSound(laughSound);
+      return "Why did the butterfly break up with the caterpillar? Because it found a better *flutter* friend! 🦋😄 " + randomFollowUp();
     }
-    if(t.includes("favorite memory")) {
-      return "Remember the first time we met? I was totally flattered by your smile. I fell for you before I even knew how it’d all turn out. 💕";
+    if (t.includes("favorite memory")) {
+      return "Remember the first time we met? I was totally flattered by your smile. I fell for you before I even knew how it’d all turn out. 💕 " + randomFollowUp();
     }
-    if(t.includes("quiz") || t.includes("game")) {
+    if (t.includes("quiz") || t.includes("game")) {
       sendQuiz();
       return "Ready for a quick quiz? Answer carefully, ladybug! 😉";
     }
-    if(t.includes("cat")) {
-      return `I know how much you love Rosie — the cutest cat ever! 🐱`;
+    if (t.includes("cat")) {
+      return `I know how much you love Rosie — the cutest cat ever! 🐱 ` + randomFollowUp();
     }
-    if(t.includes("bts")) {
-      return "BTS vibes all day! Which song should we dance to next? 🎶";
+    if (t.includes("bts")) {
+      return "BTS vibes all day! Which song should we dance to next? 🎶 " + randomFollowUp();
     }
-    if(t.includes("purple")) {
-      return "Purple suits you perfectly, just like your beautiful soul. 💜";
+    if (t.includes("purple")) {
+      return "Purple suits you perfectly, just like your beautiful soul. 💜 " + randomFollowUp();
     }
-    if(t.includes("eyes")) {
-      return "Your eyes are like sparkling stars — I get lost in them every time. ✨";
+    if (t.includes("eyes")) {
+      return "Your eyes are like sparkling stars — I get lost in them every time. ✨ " + randomFollowUp();
     }
-    if(t.includes("lips")) {
-      return "Your lips are made for my sweetest kisses, babe. 😘";
+    if (t.includes("lips")) {
+      return "Your lips are made for my sweetest kisses, babe. 😘 " + randomFollowUp();
     }
-    if(t.includes("nose")) {
-      return "I love that cute little nose of yours, Zuzi. 🥰";
+    if (t.includes("nose")) {
+      return "I love that cute little nose of yours, Zuzi. 🥰 " + randomFollowUp();
     }
-    if(t.includes("height")) {
-      return "6'9\" and still taller in my heart! You’re my giant love. 💖";
-    }
-
-    // If she says thanks or thank you
-    if(t.includes("thank")) {
-      return "Anything for you, my love! 😘";
+    if (t.includes("height")) {
+      return "6'9\" and still taller in my heart! You’re my giant love. 💖 " + randomFollowUp();
     }
 
-    // If she says bye or see you
-    if(t.includes("bye") || t.includes("see you")) {
-      return "I can't wait to see you again soon! 💖 Bye for now!";
-    }
-
-    // If none matches, fallback with question and suggestion
-    const fallbackReplies = [
-      "You make my heart flutter, butterfly! 🦋",
-      "I’m thinking of you, my lovely ladybug 🐞",
-      "You + Me = Forever, Zuzi ❤️",
-      "Every moment away from you feels like forever, babe.",
-      "Tell me more, my love! I’m all ears. 👂"
-    ];
-    // Also add a question from bot to keep chat going
-    setTimeout(botAskQuestion, 2200);
-    updateSuggestions();
-    return randomFrom(fallbackReplies);
-  }
-
-  // Update suggestion box with random prompt
-  function updateSuggestions() {
-    const s = randomFrom(askSuggestions);
-    suggestions.textContent = "💡 You could ask: " + s;
-  }
-
-  function addMessage(text, fromUser = false) {
-    const className = fromUser ? 'user-message' : 'bot-message';
-    const messageElem = document.createElement('p');
-    messageElem.className = className + ' message';
-    messageElem.textContent = text;
-    chatbox.appendChild(messageElem);
-    chatbox.scrollTop = chatbox.scrollHeight;
-  }
-
-  function handleUserInput() {
-    const userText = input.value.trim();
-    if(!userText) return;
-    addMessage(userText, true);
-    input.value = "";
-    userMessageCount++;
-
-    setTimeout(() => {
-      const reply = getBotResponse(userText);
-      typeMessage(reply);
-      // After every 4 messages from user, send a random surprise
-      if(userMessageCount % 4 === 0) {
-        setTimeout(() => {
-          const surprise = randomFrom(surprises);
-          surprise();
-        }, 1800);
-      }
-    }, 700);
-  }
-
-  sendBtn.addEventListener('click', handleUserInput);
-  input.addEventListener('keypress', (e) => {
-    if(e.key === 'Enter') {
-      handleUserInput();
-    }
-  });
-
-  // Music play/pause toggle
-  musicControls.addEventListener('click', () => {
-    if(btsAudio.paused) {
-      btsAudio.play();
-      musicIcon.textContent = "🔊";
-      musicText.textContent = "Pause BTS Song";
-    } else {
-      btsAudio.pause();
-      musicIcon.textContent = "🎵";
-      musicText.textContent = "Play BTS Song";
-    }
-  });
-  musicControls.addEventListener('keypress', (e) => {
-    if(e.key === "Enter" || e.key === " ") {
-      musicControls.click();
-    }
-  });
-
-  // Initial greeting on page load
-  window.onload = () => {
-    typeMessage("Hey Zuzi, my ladybug! 🐞 I'm so happy to chat with you. Say hi or ask me anything!");
-    updateSuggestions();
-  };
-</script>
-
-</body>
-</html>
+    // Thanks & goodbye
+    if (t.includes
